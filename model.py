@@ -310,7 +310,7 @@ class BoxNet(models.Model):
         self.num_anchors = num_anchors
         self.separable_conv = separable_conv
         self.detect_quadrangle = detect_quadrangle
-        num_values = 9 if detect_quadrangle else 4
+        num_values = 9 if detect_quadrangle else 12
         options = {
             'kernel_size': 3,
             'strides': 1,
@@ -389,7 +389,7 @@ class ClassNet(models.Model):
             self.convs = [layers.Conv2D(filters=width, bias_initializer='zeros', name=f'{self.name}/class-{i}',
                                         **options)
                           for i in range(depth)]
-            self.head = layers.Conv2D(filters=num_classes * num_anchors,
+            self.head = layers.Conv2D(filters=num_classes*num_classes * num_anchors,
                                       bias_initializer=PriorProbability(probability=0.01),
                                       name='class-predict', **options)
         self.bns = [
@@ -470,5 +470,41 @@ def efficientdet(phi, num_classes=20, num_anchors=9, weighted_bifpn=False, freez
     return model, prediction_model
 
 
+def efficientreg(phi, num_classes=20, num_anchors=9, weighted_bifpn=False, freeze_bn=False,
+                 score_threshold=0.01, detect_quadrangle=False, anchor_parameters=None, separable_conv=True):
+    assert phi in range(7)
+    input_size = image_sizes[phi]
+    input_size = 256
+    input_shape = (input_size, input_size, 3)
+    image_input = layers.Input(input_shape)
+    w_bifpn = w_bifpns[phi]
+    d_bifpn = d_bifpns[phi]
+    w_head = w_bifpn
+    d_head = d_heads[phi]
+    backbone_cls = backbones[phi]
+    features = backbone_cls(input_tensor=image_input, freeze_bn=freeze_bn)
+    if weighted_bifpn:
+        fpn_features = features
+        for i in range(d_bifpn):
+            fpn_features = build_wBiFPN(fpn_features, w_bifpn, i, freeze_bn=freeze_bn)
+    else:
+        fpn_features = features
+        for i in range(d_bifpn):
+            fpn_features = build_BiFPN(fpn_features, w_bifpn, i, freeze_bn=freeze_bn)
+    avg_features = [tf.keras.layers.GlobalAveragePooling2D()(fpn_feature) for fpn_feature in fpn_features]
+    avg_feature = tf.keras.layers.concatenate(avg_features,axis=-1)
+    output = tf.keras.layers.Dense(23)(avg_feature)
+
+    model = models.Model(inputs=[image_input], outputs=output, name='efficientdet')
+
+
+
+
+    return model
+
 if __name__ == '__main__':
-    x, y = efficientdet(1)
+    print('Tensorflow Version: ',tf.__version__)
+    model = efficientreg(0,3,weighted_bifpn=True)
+    print(model.summary())
+    # model.save('tmp')
+

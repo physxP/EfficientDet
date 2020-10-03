@@ -469,7 +469,6 @@ def efficientdet(phi, num_classes=20, num_anchors=9, weighted_bifpn=False, freez
     prediction_model = models.Model(inputs=[image_input], outputs=detections, name='efficientdet_p')
     return model, prediction_model
 
-
 def efficientreg(phi, num_classes=20, num_anchors=9, weighted_bifpn=False, freeze_bn=False,
                  score_threshold=0.01, detect_quadrangle=False, anchor_parameters=None, separable_conv=True):
     assert phi in range(7)
@@ -504,7 +503,8 @@ def efficientreg(phi, num_classes=20, num_anchors=9, weighted_bifpn=False, freez
 
 if __name__ == '__main__':
     print('Tensorflow Version: ',tf.__version__)
-    model = efficientreg(0,3,weighted_bifpn=True)
+    model,_ = efficientdet(1,weighted_bifpn=True)
     print(model.summary())
+    tf.keras.utils.plot_model(model,'model_image/edet.png',show_shapes=True)
     # model.save('tmp')
 

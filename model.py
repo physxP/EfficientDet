@@ -478,7 +478,7 @@ def efficientreg(phi, num_classes=20, num_anchors=9, weighted_bifpn=False, freez
     image_input = layers.Input(input_shape)
     w_bifpn = w_bifpns[phi]
     d_bifpn = d_bifpns[phi]
-    w_head = w_bifpn
+    w_head = w_bfpn
     d_head = d_heads[phi]
     backbone_cls = backbones[phi]
     features = backbone_cls(input_tensor=image_input, freeze_bn=freeze_bn)

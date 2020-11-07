@@ -469,17 +469,17 @@ def efficientdet(phi, num_classes=20, num_anchors=9, weighted_bifpn=False, freez
     prediction_model = models.Model(inputs=[image_input], outputs=detections, name='efficientdet_p')
     return model, prediction_model
 
-def efficientreg(phi, num_classes=20, num_anchors=9, weighted_bifpn=False, freeze_bn=False,
-                 score_threshold=0.01, detect_quadrangle=False, anchor_parameters=None, separable_conv=True):
+def efficientreg(phi,num_classes=20, num_anchors=9, weighted_bifpn=False, freeze_bn=False,
+                 score_threshold=0.01, detect_quadrangle=False, anchor_parameters=None, separable_conv=True,input_size=256):
     assert phi in range(7)
-    input_size = image_sizes[phi]
-    input_size = 256
+    # input_size = image_sizes[phi]
+
     input_shape = (input_size, input_size, 3)
     image_input = layers.Input(input_shape)
     w_bifpn = w_bifpns[phi]
     d_bifpn = d_bifpns[phi]
-    w_head = w_bfpn
-    d_head = d_heads[phi]
+    # w_head = w_bfpn
+    # d_head = d_heads[phi]
     backbone_cls = backbones[phi]
     features = backbone_cls(input_tensor=image_input, freeze_bn=freeze_bn)
     if weighted_bifpn:
@@ -492,7 +492,7 @@ def efficientreg(phi, num_classes=20, num_anchors=9, weighted_bifpn=False, freez
             fpn_features = build_BiFPN(fpn_features, w_bifpn, i, freeze_bn=freeze_bn)
     avg_features = [tf.keras.layers.GlobalAveragePooling2D()(fpn_feature) for fpn_feature in fpn_features]
     avg_feature = tf.keras.layers.concatenate(avg_features,axis=-1)
-    output = tf.keras.layers.Dense(23)(avg_feature)
+    output = tf.keras.layers.Dense(num_classes)(avg_feature)
 
     model = models.Model(inputs=[image_input], outputs=output, name='efficientdet')
 
